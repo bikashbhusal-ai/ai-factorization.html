@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fraction Visualization – Bikash Bhusal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:    #0b0f1a;
+    --bg-glass:   rgba(255,255,255,0.07);
+    --border:     rgba(255,255,255,0.10);
+    --border-hi:  rgba(255,255,255,0.22);
+    --accent:     #6ee7b7;
+    --accent2:    #818cf8;
+    --accent3:    #f9a8d4;
+    --text-1:     #f0f4ff;
+    --text-2:     #94a3b8;
+    --text-3:     #475569;
+    --danger:     #f87171;
+    --radius-sm:  8px;
+    --radius-md:  14px;
+    --radius-lg:  22px;
+    --radius-xl:  28px;
+    --shadow:     0 8px 32px rgba(0,0,0,0.45);
+    --shadow-sm:  0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Full viewport — no scroll */
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-1);
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 15% 20%, rgba(110,231,183,0.09) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 60% at 85% 80%, rgba(129,140,248,0.11) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  /* Full-height flex column */
+  .page {
+    position: relative; z-index: 2;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ======= HEADER ======= */
+  header {
+    flex-shrink: 0;
+    text-align: center;
+    padding: 1rem 1.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,15,26,0.88);
+    backdrop-filter: blur(16px);
+  }
+  .header-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+    opacity: 0.85;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #f0f4ff 30%, var(--accent) 75%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header .subtitle {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    color: var(--text-2);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+  }
+  header .subtitle span { color: var(--accent3); font-weight: 500; }
+
+  /* ======= MAIN ======= */
+  .app-shell {
+    flex: 1;
+    display: flex;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ======= LEFT PANEL ======= */
+  .panel-left {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    overflow: hidden;
+  }
+
+  .card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0.9rem 1rem;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: var(--border-hi); }
+
+  .card-title {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+
+  /* Inputs */
+  .input-group { display: flex; flex-direction: column; gap: 0.75rem; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    color: var(--text-2);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .field input[type="number"] {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-1);
+    font-family: 'Space Mono', monospace;
+    font-size: 1.45rem;
+    padding: 0.55rem 1rem;
+    outline: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    -moz-appearance: textfield;
+  }
+  .field input[type="number"]::-webkit-inner-spin-button,
+  .field input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .field input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(110,231,183,0.15);
+  }
+  .field input[type="number"].err {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(248,113,113,0.15);
+  }
+
+  /* ======= FRACTION PREVIEW CARD — two titled sections ======= */
+  #card-preview {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  #card-preview.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .preview-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  /* Each half has its own title + value */
+  .preview-half {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 0.3rem 0.2rem 0.15rem;
+  }
+  .preview-half-title {
+    font-size: 9px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  /* Stacked fraction */
+  .frac-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .frac-num, .frac-den {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.8rem;
+    line-height: 1;
+    color: var(--text-1);
+    text-align: center;
+    min-width: 54px;
+  }
+  .frac-bar {
+    width: 64px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    margin: 5px auto;
+  }
+
+  .preview-divider {
+    width: 1px;
+    background: var(--border);
+    flex-shrink: 0;
+    margin: 4px 0;
+  }
+
+  /* Percentage half */
+  .pct-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .pct-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.8rem;
+    line-height: 1;
+    color: var(--accent2);
+  }
+  .pct-suffix {
+    font-size: 0.75rem;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  /* Warning */
+  .warning-box {
+    display: none;
+    background: rgba(248,113,113,0.10);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.7rem;
+    font-size: 0.73rem;
+    color: var(--danger);
+    line-height: 1.5;
+  }
+  .warning-box.visible { display: block; }
+
+  /* Buttons */
+  .btn-group { display: flex; gap: 0.7rem; }
+  .btn {
+    flex: 1;
+    padding: 0.7rem 0;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.12);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .btn:hover::after { opacity: 1; }
+  .btn:active { transform: scale(0.96); }
+  .btn-show {
+    background: linear-gradient(135deg, var(--accent), #34d399);
+    color: #0b1a12;
+    box-shadow: 0 4px 18px rgba(110,231,183,0.32);
+  }
+  .btn-show:hover { box-shadow: 0 6px 26px rgba(110,231,183,0.48); }
+  .btn-hide {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+  }
+  .btn-hide:hover { color: var(--text-1); border-color: var(--border-hi); }
+
+  /* ======= RIGHT PANEL ======= */
+  .panel-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    overflow: hidden;
+  }
+
+  .vis-card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 0.8rem 1.1rem;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow);
+    transition: border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+  }
+  .vis-card:hover { border-color: var(--border-hi); }
+  #card-circle { flex: 5; min-height: 0; }
+  #card-rect   { flex: 0 0 auto; }
+
+  .vis-label {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .vis-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Circle fills the flex space — NO text inside */
+  #circle-svg {
+    display: block;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 6px 24px rgba(239,68,68,0.18));
+  }
+
+  /* Rectangle — single joined bar with white outer border */
+  .rect-track {
+    position: relative;
+    height: 58px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.80);
+    background: rgba(255,255,255,0.05);
+  }
+  /* filled portion — absolutely positioned from left */
+  .rect-filled-bar {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+    box-shadow: 4px 0 16px rgba(239,68,68,0.35);
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+  /* white divider lines drawn via SVG overlay */
+  .rect-dividers {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+
+  .rect-legend {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-top: 0.45rem;
+    font-size: 0.7rem;
+    color: var(--text-2);
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+  }
+  .legend-dot.f { background: #ef4444; }
+  .legend-dot.e { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 0.83rem;
+    line-height: 2;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-xl);
+    background: rgba(255,255,255,0.02);
+  }
+  .empty-state .big-icon { font-size: 2.8rem; margin-bottom: 0.6rem; opacity: 0.22; }
+
+  /* ======= FOOTER ======= */
+  footer {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    padding: 0.45rem 2rem;
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--text-3);
+    letter-spacing: 0.06em;
+    background: rgba(11,15,26,0.7);
+    backdrop-filter: blur(8px);
+  }
+  footer span { color: var(--text-2); }
+
+  /* ======= ANIMATIONS ======= */
+  @keyframes fillPop {
+    0%   { transform: scale(0.82); opacity: 0; }
+    60%  { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+  }
+  .rect-cell:nth-child(1)  { animation-delay: 0.00s; }
+  .rect-cell:nth-child(2)  { animation-delay: 0.04s; }
+  .rect-cell:nth-child(3)  { animation-delay: 0.08s; }
+  .rect-cell:nth-child(4)  { animation-delay: 0.12s; }
+  .rect-cell:nth-child(5)  { animation-delay: 0.16s; }
+  .rect-cell:nth-child(6)  { animation-delay: 0.20s; }
+  .rect-cell:nth-child(7)  { animation-delay: 0.24s; }
+  .rect-cell:nth-child(8)  { animation-delay: 0.28s; }
+  .rect-cell:nth-child(9)  { animation-delay: 0.32s; }
+  .rect-cell:nth-child(10) { animation-delay: 0.36s; }
+  .rect-cell:nth-child(11) { animation-delay: 0.40s; }
+  .rect-cell:nth-child(12) { animation-delay: 0.44s; }
+  .rect-cell:nth-child(13) { animation-delay: 0.48s; }
+  .rect-cell:nth-child(14) { animation-delay: 0.52s; }
+  .rect-cell:nth-child(15) { animation-delay: 0.56s; }
+  .rect-cell:nth-child(16) { animation-delay: 0.60s; }
+  .rect-cell:nth-child(17) { animation-delay: 0.64s; }
+  .rect-cell:nth-child(18) { animation-delay: 0.68s; }
+  .rect-cell:nth-child(19) { animation-delay: 0.72s; }
+  .rect-cell:nth-child(20) { animation-delay: 0.76s; }
+
+  /* ======= MOBILE ======= */
+  @media (max-width: 900px) {
+    html, body { overflow: auto; height: auto; }
+    .page { height: auto; overflow: visible; }
+    .app-shell { flex-direction: column; overflow: visible; padding: 0.8rem; }
+    .panel-left { width: 100%; }
+    .panel-right { min-height: 440px; }
+    #circle-svg { max-height: 220px; }
+    .rect-track  { min-height: 50px; max-height: 50px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <p class="header-eyebrow">Interactive Mathematics</p>
+    <h1>Fraction Visualization</h1>
+    <p class="subtitle">Designed by: <span>Bikash Bhusal</span></p>
+  </header>
+
+  <!-- MAIN -->
+  <main class="app-shell">
+
+    <!-- LEFT PANEL -->
+    <aside class="panel-left" aria-label="Fraction controls">
+
+      <!-- Inputs -->
+      <div class="card">
+        <p class="card-title">Fraction Input</p>
+        <div class="input-group">
+          <div class="field">
+            <label for="numerator">Numerator</label>
+            <input type="number" id="numerator" value="3" min="0" max="100" placeholder="e.g. 3">
+          </div>
+          <div class="field">
+            <label for="denominator">Denominator (1–20)</label>
+            <input type="number" id="denominator" value="5" min="1" max="20" placeholder="e.g. 5">
+          </div>
+        </div>
+      </div>
+
+      <!-- Fraction Preview — hidden until Show is clicked -->
+      <div class="card" id="card-preview">
+        <div class="preview-row">
+          <!-- Left half: Fraction Preview -->
+          <div class="preview-half">
+            <span class="preview-half-title">Fraction Preview</span>
+            <div class="frac-display">
+              <div class="frac-num" id="prev-num">3</div>
+              <div class="frac-bar"></div>
+              <div class="frac-den" id="prev-den">5</div>
+            </div>
+          </div>
+          <!-- Divider -->
+          <div class="preview-divider"></div>
+          <!-- Right half: Percentage Preview -->
+          <div class="preview-half">
+            <span class="preview-half-title">Percentage Preview</span>
+            <div class="pct-display">
+              <span class="pct-value" id="prev-pct-val">60.0</span>
+              <span class="pct-suffix">% of a whole</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning -->
+      <div class="warning-box" id="warning-box" role="alert" aria-live="polite"></div>
+
+      <!-- Controls -->
+      <div class="card">
+        <p class="card-title">Controls</p>
+        <div class="btn-group">
+          <button class="btn btn-show" onclick="showVis()">Show</button>
+          <button class="btn btn-hide" onclick="hideVis()">Hide</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT PANEL -->
+    <section class="panel-right" aria-label="Fraction visualizations">
+
+      <!-- Empty state (hidden by default) -->
+      <div class="empty-state" id="empty-state" style="display:none;">
+        <div class="big-icon">◯</div>
+        <p>Enter a fraction and click <strong>Show</strong></p>
+        <p>to reveal the visualizations.</p>
+      </div>
+
+      <!-- Circle — NO text/numbers inside SVG -->
+      <div class="vis-card" id="card-circle">
+        <p class="vis-label">Circle Visualization</p>
+        <svg id="circle-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <g id="circle-slices"></g>
+        </svg>
+      </div>
+
+      <!-- Rectangle -->
+      <div class="vis-card" id="card-rect">
+        <p class="vis-label">Rectangle Visualization</p>
+        <div class="rect-track" id="rect-track" role="img" aria-label="Rectangle fraction bar">
+          <div class="rect-filled-bar" id="rect-filled-bar"></div>
+          <svg class="rect-dividers" id="rect-dividers" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        </div>
+        <div class="rect-legend">
+          <span><span class="legend-dot f"></span>Filled (numerator)</span>
+          <span><span class="legend-dot e"></span>Empty (remaining)</span>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>Interactive Mathematics Fraction Learning Tool</span>
+    &nbsp;·&nbsp; Bikash Bhusal
+  </footer>
+
+</div>
+
+<script>
+  const numInput   = document.getElementById('numerator');
+  const denInput   = document.getElementById('denominator');
+  const prevNum    = document.getElementById('prev-num');
+  const prevDen    = document.getElementById('prev-den');
+  const prevPctVal = document.getElementById('prev-pct-val');
+  const warnBox    = document.getElementById('warning-box');
+  const emptyState = document.getElementById('empty-state');
+  const cardPreview= document.getElementById('card-preview');
+  const cardCircle = document.getElementById('card-circle');
+  const cardRect   = document.getElementById('card-rect');
+  const circleSVG  = document.getElementById('circle-slices');
+  const rectTrack  = document.getElementById('rect-track');
+
+  let isVisible = false;
+
+  /* ---- Validate ---- */
+  function validate() {
+    const n = parseInt(numInput.value, 10);
+    const d = parseInt(denInput.value, 10);
+    warnBox.classList.remove('visible');
+    numInput.classList.remove('err');
+    denInput.classList.remove('err');
+    if (isNaN(n) || isNaN(d)) {
+      warnBox.textContent = 'Please enter valid numbers for both fields.';
+      warnBox.classList.add('visible'); return null;
+    }
+    if (d === 0) {
+      warnBox.textContent = 'Denominator cannot be zero. Division by zero is undefined.';
+      warnBox.classList.add('visible'); denInput.classList.add('err'); return null;
+    }
+    if (d < 1 || d > 20) {
+      warnBox.textContent = 'Denominator must be between 1 and 20 for clear visualization.';
+      warnBox.classList.add('visible'); denInput.classList.add('err'); return null;
+    }
+    if (n < 0) {
+      warnBox.textContent = 'Numerator cannot be negative.';
+      warnBox.classList.add('visible'); numInput.classList.add('err'); return null;
+    }
+    if (n > d) {
+      warnBox.textContent = 'Numerator cannot exceed the denominator (fractions must be ≤ 1).';
+      warnBox.classList.add('visible'); numInput.classList.add('err'); return null;
+    }
+    return { n, d };
+  }
+
+  /* ---- Update Fraction Preview ---- */
+  function updatePreview(n, d) {
+    prevNum.textContent = n;
+    prevDen.textContent = d;
+    prevPctVal.textContent = d > 0 ? ((n / d) * 100).toFixed(1) : '–';
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  /* ---- Draw circle (clean — no text inside, red fill, white dividers) ---- */
+  function drawCircle(n, d) {
+    circleSVG.innerHTML = '';
+    const cx = 150, cy = 150, r = 120;
+    const TAU = Math.PI * 2;
+    const start = -Math.PI / 2;
+
+    if (d === 1) {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+      c.setAttribute('fill', n === 1 ? '#ef4444' : 'rgba(255,255,255,0.07)');
+      c.setAttribute('stroke', 'rgba(255,255,255,0.85)'); c.setAttribute('stroke-width', '2.5');
+      if (n === 1) c.setAttribute('filter', 'url(#glow)');
+      circleSVG.appendChild(c); return;
+    }
+
+    for (let i = 0; i < d; i++) {
+      const a0 = start + (TAU / d) * i;
+      const a1 = start + (TAU / d) * (i + 1);
+      const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+      const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+      const large = (a1 - a0) > Math.PI ? 1 : 0;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`);
+      // White divider lines between slices — clearly visible
+      path.setAttribute('stroke', 'rgba(255,255,255,0.80)');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('stroke-linejoin', 'round');
+
+      if (i < n) {
+        // Red gradient: bright red → deep crimson
+        const ratio = i / (n - 1 || 1);
+        const rv = Math.round(lerp(239, 185, ratio));
+        const gv = Math.round(lerp(68, 18, ratio));
+        const bv = Math.round(lerp(68, 18, ratio));
+        path.setAttribute('fill', `rgb(${rv},${gv},${bv})`);
+        path.style.transformOrigin = `${cx}px ${cy}px`;
+        path.style.animation = `fillPop 0.32s cubic-bezier(.4,0,.2,1) ${(i * 0.055).toFixed(2)}s both`;
+        if (n === d) path.setAttribute('filter', 'url(#glow)');
+      } else {
+        path.setAttribute('fill', 'rgba(255,255,255,0.06)');
+      }
+      circleSVG.appendChild(path);
+    }
+
+    // Bright white outer ring
+    const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', r);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', 'rgba(255,255,255,0.85)');
+    ring.setAttribute('stroke-width', '2.5');
+    circleSVG.appendChild(ring);
+  }
+
+  /* ---- Draw rectangle (single joined bar, SVG white dividers) ---- */
+  function drawRect(n, d) {
+    const bar    = document.getElementById('rect-filled-bar');
+    const svgEl  = document.getElementById('rect-dividers');
+    const track  = document.getElementById('rect-track');
+
+    // Animate filled width
+    const pct = d > 0 ? (n / d * 100) : 0;
+    bar.style.width = pct + '%';
+
+    // Draw white divider lines via SVG
+    svgEl.innerHTML = '';
+    const W = track.offsetWidth || 400;
+    const H = track.offsetHeight || 58;
+    for (let i = 1; i < d; i++) {
+      const x = (i / d) * 100 + '%';
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x); line.setAttribute('x2', x);
+      line.setAttribute('y1', '0'); line.setAttribute('y2', '100%');
+      line.setAttribute('stroke', 'rgba(255,255,255,0.75)');
+      line.setAttribute('stroke-width', '1.5');
+      svgEl.appendChild(line);
+    }
+  }
+
+  /* ---- SHOW: only toggles Fraction Preview card; vis cards always visible ---- */
+  function showVis() {
+    const frac = validate();
+    if (!frac) return;
+    const { n, d } = frac;
+
+    updatePreview(n, d);
+    drawCircle(n, d);
+    drawRect(n, d);
+
+    // Show preview card only
+    cardPreview.classList.add('visible');
+    isVisible = true;
+  }
+
+  /* ---- HIDE: only hides Fraction Preview card; vis cards stay ---- */
+  function hideVis() {
+    cardPreview.classList.remove('visible');
+    isVisible = false;
+  }
+
+  /* ---- Live redraw while visible ---- */
+  function onInputChange() {
+    if (!isVisible) return;
+    const frac = validate();
+    if (!frac) return;
+    updatePreview(frac.n, frac.d);
+    drawCircle(frac.n, frac.d);
+    drawRect(frac.n, frac.d);
+  }
+
+  numInput.addEventListener('input', onInputChange);
+  denInput.addEventListener('input', onInputChange);
+
+  // Auto-show on page load with default values (3/5)
+  (function init() {
+    const frac = validate();
+    if (!frac) return;
+    updatePreview(frac.n, frac.d);
+    drawCircle(frac.n, frac.d);
+    drawRect(frac.n, frac.d);
+    cardPreview.classList.add('visible');
+    isVisible = true;
+  })();
+</script>
+</body>
+</html>
